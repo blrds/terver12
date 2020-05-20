@@ -20,6 +20,8 @@ namespace WindowsFormsApplication1
            
         }
 
+        List<myPoint> list = new List<myPoint> { };
+
         public sealed class myPointMap : ClassMap<myPoint>
         {
             public myPointMap()
@@ -43,6 +45,78 @@ namespace WindowsFormsApplication1
 
         private double fx(double x, double m, double q) {
             return Math.Exp(-Math.Pow(Math.Log(x) - m, 2) / (2 * q * q)) / (x * q * Math.Sqrt(2 * Math.PI));            
+        }
+
+        private double aver(List<myPoint> list) {
+            double aver=0;
+            for (int i = 0; i < list.Count; i++)
+                aver += list[i].x;
+            aver /= list.Count;
+            return aver;
+        }
+
+        private double mode(List<myPoint> list) {
+            double mode;
+            mode = list[list.Count - 1].x;
+            return mode;
+        }
+
+        private double median(List<myPoint> list) {
+            double median;
+            if (list.Count % 2 == 1)
+                median = list[list.Count / 2].x;
+            else
+                median = 0.5 * (list[list.Count/2-1].x + list[list.Count/2].x);
+            return median;
+        }
+
+        private double dispersion(List<myPoint> list) {
+            double dispersion=0, av=aver(list);
+            for (int i = 0; i < list.Count; i++)
+                dispersion += Math.Pow((list[i].x-av), 2);
+            dispersion /= list.Count;
+            return dispersion;
+        }
+
+        private double standart(List<myPoint> list) {
+            double standart;
+            standart = Math.Sqrt(dispersion(list));
+            return standart;
+        }
+
+        private double expect(List<myPoint> list) {
+            double expect = 0;
+            for (int i = 0; i < list.Count; i++)
+                expect += list[i].x * list[i].y;
+            return expect;
+        }
+
+        private double excess(List<myPoint> list) {
+            double excess=0, ex = expect(list);
+            for (int i = 0; i < list.Count; i++)
+                excess += Math.Pow((list[i].x-ex),4) * list[i].y;
+            excess = (excess / Math.Pow(dispersion(list), 4)) - 3;
+            return excess;
+        }
+
+        private double asymmetry(List<myPoint> list) {
+            double asymmetry=0, ex=expect(list);
+            for (int i = 0; i < list.Count; i++)
+                asymmetry += Math.Pow((list[i].x - ex), 3) * list[i].y;
+            asymmetry /= Math.Pow(dispersion(list), 3);
+            return asymmetry;
+        }
+
+        private double minimum(List<myPoint> list) {
+            double minimum;
+            minimum = list[0].x;
+            return minimum;
+        }
+
+        private double maximum(List<myPoint> list) {
+            double maximum;
+            maximum = list[list.Count - 1].x;
+            return maximum;
         }
 
         private void generate(double from, double to, double m, double q, out double K1, out double K2) { 
@@ -90,13 +164,12 @@ namespace WindowsFormsApplication1
             if (File.Exists(saveFileName)) File.Delete(saveFileName);
             drawGraph(from, to, m, q);
             this.chart1.Series[1].Points.Clear();
-            List<myPoint> list = new List<myPoint> {};
             for (int i = 0; i < count; i++)
             {
                 generate(from, to, m, q, out X, out Y);
-                Log("postgenerated" + X.ToString() + " " + Y.ToString());
+                //Log("postgenerated" + X.ToString() + " " + Y.ToString());
                 list.Add(new myPoint() { x = X, y = Y });
-                Log("added" + list[list.Count - 1].toString());
+                //Log("added" + list[list.Count - 1].toString());
             }
             drawPoints(list);
             if (toFile) {
@@ -190,11 +263,36 @@ namespace WindowsFormsApplication1
                     button1.Focus();
         }
 
+        private void labelmake(bool b) {
+            label6.Visible = b;
+            label7.Visible = b;
+            label8.Visible = b;
+            label9.Visible = b;
+            label10.Visible = b;
+            label11.Visible = b;
+            label12.Visible = b;
+            label13.Visible = b;
+            label14.Visible = b;
+            label15.Visible = b;
+            label16.Visible = b;
+            label17.Visible = b;
+            label18.Visible = b;
+            label19.Visible = b;
+            label20.Visible = b;
+            label21.Visible = b;
+            label22.Visible = b;
+            label23.Visible = b;
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            chart1.Series[0].Points.Clear();
+            chart1.Series[1].Points.Clear();
+            chart1.Series[2].Points.Clear();
             try {
                 File.Delete("log.txt");
             } catch (Exception err) { };
+            labelmake(false);
         }
 
         private int ComparisonbyX(myPoint a, myPoint b)
@@ -216,7 +314,7 @@ namespace WindowsFormsApplication1
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
                 openFileName = openFileDialog.FileName;
-                List<myPoint> list=new List<myPoint> { };
+                
                 using (StreamReader streamReader = new StreamReader(openFileName))
                 {
                     using (CsvReader csvReader = new CsvReader(streamReader, CultureInfo.InvariantCulture))
@@ -228,10 +326,42 @@ namespace WindowsFormsApplication1
                     }
                 }
                 drawPoints(list);   
-                list.Sort(ComparisonbyX);
-                label1.Text = Convert.ToString(list[0].x);
-                label2.Text = Convert.ToString(list[list.Count-1].x);
+            }
+        }
 
+        private void gist() {
+            this.chart1.Series[0].Points.Clear();
+            this.chart1.Series[1].Points.Clear();
+            int groups = Convert.ToInt16(Math.Floor(1+3.322*Math.Log(list.Count)));
+            double move = (list[list.Count - 1].x - list[0].x) / groups;
+            double cur = list[0].x;
+            int count;
+            for (int i = 0; i < groups; i++) {
+                count = 0;
+                for (int j = 0; j < list.Count; j++)
+                    if (list[j].x >= cur && list[j].x < (cur + move)) count++;
+                this.chart1.Series[2].Points.AddXY((cur + cur + move) / 2, count);
+                cur += move;
+            }
+            
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (list.Count != 0)
+            {
+                list.Sort(ComparisonbyX);
+                label7.Text = Convert.ToString(aver(list));
+                label9.Text = Convert.ToString(mode(list));
+                label11.Text = Convert.ToString(median(list));
+                label13.Text = Convert.ToString(dispersion(list));
+                label15.Text = Convert.ToString(standart(list));
+                label17.Text = Convert.ToString(excess(list));
+                label19.Text = Convert.ToString(asymmetry(list));
+                label21.Text = Convert.ToString(minimum(list));
+                label23.Text = Convert.ToString(maximum(list));
+                gist();
+                labelmake(true);
             }
         }
 
