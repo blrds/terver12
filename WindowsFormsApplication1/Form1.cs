@@ -57,7 +57,9 @@ namespace WindowsFormsApplication1
 
         private double mode(List<myPoint> list) {
             double mode;
+            list.Sort(ComparisonbyY);
             mode = list[list.Count - 1].x;
+            list.Sort(ComparisonbyX);
             return mode;
         }
 
@@ -94,8 +96,8 @@ namespace WindowsFormsApplication1
         private double excess(List<myPoint> list) {
             double excess=0, ex = expect(list);
             for (int i = 0; i < list.Count; i++)
-                excess += Math.Pow((list[i].x-ex),4) * list[i].y;
-            excess = (excess / Math.Pow(dispersion(list), 4)) - 3;
+                excess += (Math.Pow((list[i].x-ex),4)*list[i].y);
+            excess = (excess / (Math.Pow(dispersion(list), 2)*list.Count)) - 3;
             return excess;
         }
 
@@ -103,7 +105,7 @@ namespace WindowsFormsApplication1
             double asymmetry=0, ex=expect(list);
             for (int i = 0; i < list.Count; i++)
                 asymmetry += Math.Pow((list[i].x - ex), 3) * list[i].y;
-            asymmetry /= Math.Pow(dispersion(list), 3);
+            asymmetry /=( Math.Pow(dispersion(list), 3/2)*list.Count);
             return asymmetry;
         }
 
@@ -146,16 +148,20 @@ namespace WindowsFormsApplication1
         private void drawPoints(List<myPoint> list)
         {
             this.chart1.Series[1].Points.Clear();
-            Log("cleared");
+            //log("cleared");
             foreach (myPoint mp in list) {
                 this.chart1.Series[1].Points.AddXY(mp.x, mp.y);
-                Log("drawn " + mp.ToString());
-                this.chart1.Update();
+               // Log("drawn " + mp.ToString());
+               //this.chart1.Update();
             }
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            list.Clear();
+            this.chart1.Series[0].Points.Clear();
+            this.chart1.Series[1].Points.Clear();
+            this.chart1.Series[2].Points.Clear();
             double from = Convert.ToDouble(this.textBox1.Text), to = Convert.ToDouble(this.textBox2.Text);
             double m = Convert.ToDouble(this.textBox4.Text), q = Convert.ToDouble(this.textBox5.Text);
             double x = from, X, Y;
@@ -167,23 +173,29 @@ namespace WindowsFormsApplication1
             for (int i = 0; i < count; i++)
             {
                 generate(from, to, m, q, out X, out Y);
-                //Log("postgenerated" + X.ToString() + " " + Y.ToString());
+                X=Math.Round(X, 6);
+                Y=Math.Round(Y, 6);
+                Log("postgenerated" + X.ToString() + " " + Y.ToString());
                 list.Add(new myPoint() { x = X, y = Y });
-                //Log("added" + list[list.Count - 1].toString());
+                Log("added" + list[list.Count - 1].toString());
             }
             drawPoints(list);
             if (toFile) {
-
-                using (StreamWriter streamWriter = new StreamWriter(saveFileName))
+                try
                 {
-
-                    using (CsvWriter csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture))
+                    using (StreamWriter streamWriter = new StreamWriter(saveFileName))
                     {
 
-                        csvWriter.Configuration.Delimiter = ";";
-                        csvWriter.WriteRecords(list);
-                    }
+                        using (CsvWriter csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture))
+                        {
+                            csvWriter.Configuration.Delimiter = ";";
+                            csvWriter.WriteRecords(list);
+                        }
 
+                    }
+                }
+                catch (Exception err) {
+                    MessageBox.Show("Закройте файл записи", "Ошибка записи", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -250,7 +262,7 @@ namespace WindowsFormsApplication1
 
         private void textBox5_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && (e.KeyChar != ',') && (e.KeyChar != '-'))
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && (e.KeyChar != ','))
             {
                 e.Handled = true;
             }
@@ -282,6 +294,13 @@ namespace WindowsFormsApplication1
             label21.Visible = b;
             label22.Visible = b;
             label23.Visible = b;
+            label24.Visible = b;
+            label25.Visible = b;
+            label26.Visible = b;
+            label27.Visible = b;
+            label28.Visible = b;
+            label29.Visible = b;
+            label30.Visible = b;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -311,20 +330,29 @@ namespace WindowsFormsApplication1
 
         private void button2_Click(object sender, EventArgs e)
         {
+            this.chart1.Series[0].Points.Clear();
+            this.chart1.Series[1].Points.Clear();
+            this.chart1.Series[2].Points.Clear();
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
                 openFileName = openFileDialog.FileName;
-                
-                using (StreamReader streamReader = new StreamReader(openFileName))
+                try
                 {
-                    using (CsvReader csvReader = new CsvReader(streamReader, CultureInfo.InvariantCulture))
+                    using (StreamReader streamReader = new StreamReader(openFileName))
                     {
-                        csvReader.Configuration.Delimiter = ";";
-                        csvReader.Configuration.RegisterClassMap<myPointMap>();
-                        while (csvReader.Read())
-                            list.Add(csvReader.GetRecord<myPoint>());
+                        using (CsvReader csvReader = new CsvReader(streamReader, CultureInfo.InvariantCulture))
+                        {
+                            csvReader.Configuration.Delimiter = ";";
+                            csvReader.Configuration.RegisterClassMap<myPointMap>();
+                            while (csvReader.Read())
+                                list.Add(csvReader.GetRecord<myPoint>());
+                        }
                     }
                 }
+                catch (Exception err) {
+                    MessageBox.Show("Закройте считываемый файл", "Ошибка чтения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
                 drawPoints(list);   
             }
         }
@@ -348,18 +376,36 @@ namespace WindowsFormsApplication1
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (list.Count != 0)
+            int i = 1;
+            if (this.textBox4.Text == "") {
+                MessageBox.Show("Введите мат.ожидание выборки", "Некоректные данные", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                i *= 0;
+            }
+            if (this.textBox5.Text == "")
             {
+                MessageBox.Show("Введите среднеквадратическое отклонение выбоорки", "Некоректные данные", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                i *= 0;
+            }
+            if (list.Count != 0 && i!=0)
+            {
+                double q = Convert.ToDouble(textBox5.Text), m = Convert.ToDouble(textBox4.Text), q2 = q * q, m2 = m * m;
                 list.Sort(ComparisonbyX);
-                label7.Text = Convert.ToString(aver(list));
-                label9.Text = Convert.ToString(mode(list));
-                label11.Text = Convert.ToString(median(list));
-                label13.Text = Convert.ToString(dispersion(list));
-                label15.Text = Convert.ToString(standart(list));
-                label17.Text = Convert.ToString(excess(list));
-                label19.Text = Convert.ToString(asymmetry(list));
-                label21.Text = Convert.ToString(minimum(list));
-                label23.Text = Convert.ToString(maximum(list));
+                label7.Text = Convert.ToString(Math.Round(aver(list),4));
+                label24.Text = textBox4.Text;
+                label9.Text = Convert.ToString(Math.Round(mode(list), 4));
+                label25.Text = Convert.ToString(m);
+                label11.Text = Convert.ToString(Math.Round(median(list), 4));
+                label26.Text = Convert.ToString(m);
+                label13.Text = Convert.ToString(Math.Round(dispersion(list), 4));
+                label27.Text = Convert.ToString(Math.Round(q2, 4));
+                label15.Text = Convert.ToString(Math.Round(standart(list), 4));
+                label29.Text = Convert.ToString(Math.Round(Math.Sqrt(q2), 4));
+                label17.Text = Convert.ToString(Math.Round(excess(list), 4));
+                label28.Text = Convert.ToString(0);
+                label19.Text = Convert.ToString(Math.Round(asymmetry(list), 4));
+                label30.Text = Convert.ToString(0);
+                label21.Text = Convert.ToString(Math.Round(minimum(list), 4));
+                label23.Text = Convert.ToString(Math.Round(maximum(list), 4));
                 gist();
                 labelmake(true);
             }
