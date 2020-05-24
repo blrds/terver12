@@ -123,6 +123,7 @@ namespace WindowsFormsApplication1
                 }
 
             }
+            Log("wroted " + DateTime.Now + "\n");
         }
 
         private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
@@ -237,6 +238,7 @@ namespace WindowsFormsApplication1
             try
             {
                 File.Delete("log.txt");
+                Log("start " + DateTime.Now + "\n");
             }
             catch (Exception err) { };
             labelmake(false);
@@ -245,6 +247,7 @@ namespace WindowsFormsApplication1
 
         private void button2_Click(object sender, EventArgs e)
         {
+            Log("bt2_cl " + DateTime.Now + "\n");
             this.chart1.Series[0].Points.Clear();
             this.chart1.Series[1].Points.Clear();
             this.chart1.Series[2].Points.Clear();
@@ -296,6 +299,7 @@ namespace WindowsFormsApplication1
 
         private void button3_Click(object sender, EventArgs e)
         {
+            Log("bt3_cl " + DateTime.Now + "\n");
             int i = 1;
             if (this.textBox4.Text == "")
             {
