@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace WindowsFormsApplication1
@@ -46,6 +47,7 @@ namespace WindowsFormsApplication1
                 this.chart1.Series[0].Points.AddXY(x, f.fx(x));
                 x += MOVE;
             }
+            this.chart1.Update();
         }
 
         private void drawPoints(List<myPoint> list)
@@ -77,7 +79,7 @@ namespace WindowsFormsApplication1
             catch (Exception) {
                 MessageBox.Show("Введите корректные данные","Ошибка данных",MessageBoxButtons.OK,MessageBoxIcon.Error);
             }
-            double x = from, X, Y;
+            double x = from, X=0, Y=0;
             bool toFile = this.checkBox1.Checked;
             try
             {
@@ -94,9 +96,8 @@ namespace WindowsFormsApplication1
             this.chart1.Series[1].Points.Clear();
             for (int i = 0; i < count; i++)
             {
-                f.generate(from, to, out X, out Y);
-                X = Math.Round(X, 6);
-                Y = Math.Round(Y, 6);
+                f.generate(from,to,out X,out Y);
+                Log("generated");
                 list.Add(new myPoint() { x = X, y = Y });
             }
             drawPoints(list);
@@ -228,6 +229,16 @@ namespace WindowsFormsApplication1
             label28.Visible = b;
             label29.Visible = b;
             label30.Visible = b;
+            label34.Visible = b;
+            label35.Visible = b;
+            label36.Visible = b;
+            label37.Visible = b;
+            label38.Visible = b;
+            label39.Visible = b;
+            label40.Visible = b;
+            label41.Visible = b;
+            label42.Visible = b;
+            label43.Visible = b;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -235,6 +246,7 @@ namespace WindowsFormsApplication1
             chart1.Series[0].Points.Clear();
             chart1.Series[1].Points.Clear();
             chart1.Series[2].Points.Clear();
+            comboBox1.SelectedItem = comboBox1.Items[0];
             try
             {
                 File.Delete("log.txt");
@@ -282,7 +294,16 @@ namespace WindowsFormsApplication1
         {
             this.chart1.Series[0].Points.Clear();
             this.chart1.Series[1].Points.Clear();
-            int groups = Convert.ToInt16(Math.Floor(1 + 3.322 * Math.Log(list.Count)));
+            this.chart1.Series[2].Points.Clear();
+            int groups = 0;
+            if (comboBox1.SelectedItem == comboBox1.Items[0])
+                groups = (int)Math.Floor(1 + 3.322*Math.Log(list.Count));
+            else
+                if (comboBox1.SelectedItem == comboBox1.Items[1])
+                    groups =1+(int)Math.Floor(Math.Log(list.Count,2));
+                else
+                    groups =(int)Math.Floor(Math.Sqrt(list.Count));
+            groups *= (int)numericUpDown1.Value;
             double move = (list[list.Count - 1].x - list[0].x) / groups;
             double cur = list[0].x;
             int count;
@@ -320,18 +341,25 @@ namespace WindowsFormsApplication1
                 list.Sort(m.ComparisonbyX);
                 label7.Text = Convert.ToString(Math.Round(f.aver(list), 4));
                 label24.Text = textBox4.Text;
+                label37.Text = Convert.ToString(Math.Round(Math.Exp((f.M + q2) / 2),4));
                 label9.Text = Convert.ToString(Math.Round(f.mode(list), 4));
-                label25.Text = Convert.ToString(m);
+                label25.Text = Convert.ToString(f.M);
+                label38.Text = Convert.ToString(Math.Round(Math.Exp(f.M - q2),4));
                 label11.Text = Convert.ToString(Math.Round(f.median(list), 4));
-                label26.Text = Convert.ToString(m);
+                label26.Text = Convert.ToString(f.M);
+                label39.Text = Convert.ToString(Math.Round(Math.Exp(f.M),4));
                 label13.Text = Convert.ToString(Math.Round(f.dispersion(list), 4));
                 label27.Text = Convert.ToString(Math.Round(q2, 4));
+                label40.Text = Convert.ToString(Math.Round(((Math.Exp(q2) - 1) * Math.Exp(2 * f.M + q2)), 4));
                 label15.Text = Convert.ToString(Math.Round(f.standart(list), 4));
                 label29.Text = Convert.ToString(Math.Round(Math.Sqrt(q2), 4));
+                label42.Text = Convert.ToString(Math.Round(Math.Sqrt(((Math.Exp(q2) - 1) * Math.Exp(2 * f.M + q2))), 4));
                 label17.Text = Convert.ToString(Math.Round(f.excess(list), 4));
                 label28.Text = Convert.ToString(0);
+                label41.Text = Convert.ToString(Math.Round(Math.Exp(4 * q2) + 2 * Math.Exp(3 * q2) + 3 * Math.Exp(2 * q2) - 6, 4));
                 label19.Text = Convert.ToString(Math.Round(f.asymmetry(list), 4));
                 label30.Text = Convert.ToString(0);
+                label43.Text = Convert.ToString(Math.Round((Math.Exp(q2) + 2) * Math.Sqrt(Math.Exp(q2) - 1), 4));
                 label21.Text = Convert.ToString(Math.Round(f.minimum(list), 4));
                 label23.Text = Convert.ToString(Math.Round(f.maximum(list), 4));
                 gist();

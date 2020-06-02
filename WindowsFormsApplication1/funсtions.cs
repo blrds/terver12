@@ -85,7 +85,7 @@ namespace WindowsFormsApplication1
             double excess = 0, ex = expect(list);
             for (int i = 0; i < list.Count; i++)
                 excess += (Math.Pow((list[i].x - ex), 4) * list[i].y);
-            excess = (excess / (Math.Pow(dispersion(list), 2) * list.Count)) - 3;
+            excess = (excess / Math.Pow(dispersion(list), 2)) - 3;
             return excess;
         }
 
@@ -94,7 +94,7 @@ namespace WindowsFormsApplication1
             double asymmetry = 0, ex = expect(list);
             for (int i = 0; i < list.Count; i++)
                 asymmetry += Math.Pow((list[i].x - ex), 3) * list[i].y;
-            asymmetry /= (Math.Pow(dispersion(list), 3 / 2) * list.Count);
+            asymmetry /= (Math.Pow(Math.Sqrt(dispersion(list)), 3));
             return asymmetry;
         }
 
@@ -114,14 +114,17 @@ namespace WindowsFormsApplication1
 
         public void generate(double from, double to, out double K1, out double K2)
         {
-            double k1, k2;
+            double k1, k2, x1, x2;
             do
             {
+
                 k1 = random.NextDouble();
                 k2 = random.NextDouble();
-                K1 = from + (to - from) * k1;
-                K2 = k2 * fx(Math.Exp(m - q * q));
-            } while (K2 > fx(K1));
+                x1 = from + (to - from) * k1;
+                x2 = k2 * fx(Math.Exp(m - q * q));
+            } while (x2 > fx(x1));
+            K1 = x1;
+            K2 = x2;
         }
     }
 }
